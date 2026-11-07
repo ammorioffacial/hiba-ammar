@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Trophy } from "lucide-react";
 import confetti from "canvas-confetti";
@@ -41,7 +41,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <OnlineBoot />
+      <Suspense fallback={null}>
+        <OnlineBoot />
+      </Suspense>
       <AuthGate>{children}</AuthGate>
       <AnimatePresence>
         {badge && (

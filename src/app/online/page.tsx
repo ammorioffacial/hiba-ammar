@@ -140,6 +140,7 @@ export default function OnlinePage() {
       <Shell title="إكس أو أونلاين" action={<TopControls />}>
         <div className={`${card} space-y-4`}>
           <button className={`${btnPrimary} w-full`} onClick={create}>أنشئ غرفة جديدة</button>
+          <Link href="/play" className="block rounded-2xl border border-line bg-surface-2 py-3 text-center font-bold">ألعاب أونلاين أخرى</Link>
           <div className="text-center text-xs text-muted">أو</div>
           <div className="flex gap-2">
             <input

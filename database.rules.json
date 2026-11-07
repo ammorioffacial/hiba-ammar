@@ -30,6 +30,32 @@
         ".write": "auth != null"
       }
     },
+    "games": {
+      "$code": {
+        "meta": {
+          ".read": "auth != null",
+          ".write": "auth != null"
+        },
+        "state": {
+          ".read": "auth != null",
+          ".write": "auth != null"
+        },
+        "strokes": {
+          ".read": "auth != null",
+          ".write": "auth != null"
+        },
+        "chat": {
+          ".read": "auth != null",
+          ".write": "auth != null"
+        },
+        "secret": {
+          "$uid": {
+            ".read": "auth != null && auth.uid === $uid",
+            ".write": "auth != null && auth.uid === $uid"
+          }
+        }
+      }
+    },
     "rooms": {
       "$code": {
         ".read": "auth != null",
