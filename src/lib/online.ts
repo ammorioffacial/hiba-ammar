@@ -21,6 +21,7 @@ export const useOnline = create<OnlineState>(() => ({ me: null, authReady: false
 let started = false;
 let unsubConn: (() => void) | null = null;
 let currentGame: string | null = null;
+let heartbeat: ReturnType<typeof setInterval> | null = null;
 
 // اسم اللعبة من الرابط، عشان يظهر "عمار يلعب إكس أو"
 function gameFromPath(path: string): string | null {
@@ -33,12 +34,17 @@ function attachPresence(name: string) {
   if (!db) return;
   const p = ref(db, `presence/${name}`);
   unsubConn?.();
+  if (heartbeat) clearInterval(heartbeat);
   unsubConn = onValue(ref(db, ".info/connected"), (snap) => {
     if (snap.val() !== true) return;
     // لما ينقطع الاتصال يصير غير متصل تلقائياً
     onDisconnect(p).set({ online: false, game: null, at: serverTimestamp() });
     set(p, { online: true, game: currentGame, at: serverTimestamp() });
   });
+  // إشارة تتحدث كل دقيقة، فأي حالة قديمة تصير "غير متصل" تلقائياً
+  heartbeat = setInterval(() => {
+    if (useOnline.getState().me) update(p, { at: Date.now() });
+  }, 60_000);
 }
 
 export function startOnline() {

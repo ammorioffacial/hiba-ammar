@@ -11,10 +11,13 @@ type Presence = { online: boolean; game: string | null; at?: number };
 export function PresenceBoard() {
   const names = useStore((s) => s.names);
   const [data, setData] = useState<Record<string, Presence>>({});
+  const [, tick] = useState(0);
 
   useEffect(() => {
     if (!firebaseReady || !db) return;
-    return onValue(ref(db, "presence"), (snap) => setData(snap.val() ?? {}));
+    const t = setInterval(() => tick((n) => n + 1), 30_000);
+    const off = onValue(ref(db, "presence"), (snap) => setData(snap.val() ?? {}));
+    return () => { clearInterval(t); off(); };
   }, []);
 
   if (!firebaseReady) return null;
@@ -23,15 +26,18 @@ export function PresenceBoard() {
     <div className="grid grid-cols-2 gap-2">
       {[names.a, names.b].map((n) => {
         const p = data[n];
-        const playing = p?.online && p.game;
+        // متصل فقط إذا الإشارة حديثة (آخر دقيقتين)
+        const fresh = !!p?.at && Date.now() - p.at < 120_000;
+        const online = !!p?.online && fresh;
+        const playing = online && p?.game;
         return (
           <div key={n} className="rounded-2xl border border-line bg-surface p-3">
             <div className="flex items-center gap-2">
-              <span className={`h-2.5 w-2.5 rounded-full ${p?.online ? "bg-emerald-400" : "bg-muted"}`} />
+              <span className={`h-2.5 w-2.5 rounded-full ${online ? "bg-emerald-400" : "bg-muted"}`} />
               <span className="font-black">{n}</span>
             </div>
             <div className="mt-1 text-xs text-muted">
-              {p?.online ? (playing ? `يلعب ${p.game} الحين` : "متصل ومو في لعبة") : "غير متصل"}
+              {online ? (playing ? `يلعب ${p.game} الحين` : "متصل ومو في لعبة") : "غير متصل"}
             </div>
           </div>
         );
