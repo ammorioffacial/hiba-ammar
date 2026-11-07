@@ -8,34 +8,28 @@ import { useStore } from "@/lib/store";
 
 type Presence = { online: boolean; game: string | null; at?: number };
 
-// حالة الطرف الثاني بشكل واضح، وحالتك أنت بسطر صغير
+// حالة الطرف الثاني: الحالة من Firebase مباشرة (Firebase يحدّثها لحاله عند انقطاع الاتصال)
 export function PresenceBoard() {
   const names = useStore((s) => s.names);
   const me = useOnline((s) => s.me);
   const [data, setData] = useState<Record<string, Presence>>({});
-  const [, tick] = useState(0);
-  const [offset, setOffset] = useState(0); // فرق الساعة بين جوالكم وساعة Firebase
 
   useEffect(() => {
     if (!firebaseReady || !db) return;
-    const t = setInterval(() => tick((n) => n + 1), 30_000);
-    const offPresence = onValue(ref(db, "presence"), (snap) => setData(snap.val() ?? {}));
-    const offTime = onValue(ref(db, ".info/serverTimeOffset"), (snap) => setOffset(Number(snap.val()) || 0));
-    return () => { clearInterval(t); offPresence(); offTime(); };
+    return onValue(ref(db, "presence"), (snap) => setData(snap.val() ?? {}));
   }, []);
 
   if (!firebaseReady || !me) return null;
 
   const other = me.name === names.a ? names.b : names.a;
-  const status = (n: string) => {
+  const info = (n: string) => {
     const p = data[n];
-    // متصل فقط إذا الإشارة حديثة (آخر دقيقتين)
-    const fresh = !!p?.at && Date.now() + offset - p.at < 120_000;
-    const online = !!p?.online && fresh;
-    return { online, game: online ? p?.game ?? null : null };
+    const online = p?.online === true;
+    const seen = p?.at ? new Date(p.at).toLocaleTimeString("ar", { hour: "2-digit", minute: "2-digit" }) : null;
+    return { online, game: online ? p?.game ?? null : null, seen };
   };
-  const o = status(other);
-  const m = status(me.name);
+  const o = info(other);
+  const m = info(me.name);
 
   return (
     <div className="space-y-2">
@@ -44,7 +38,9 @@ export function PresenceBoard() {
           <span className={`h-3 w-3 rounded-full ${o.online ? "bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,.8)]" : "bg-muted"}`} />
           <div>
             <div className="font-black">{other}</div>
-            <div className="text-xs text-muted">{o.online ? (o.game ? `يلعب ${o.game} الحين` : "متصل الحين") : "غير متصل"}</div>
+            <div className="text-xs text-muted">
+              {o.online ? (o.game ? `يلعب ${o.game} الحين` : "متصل الحين") : o.seen ? `آخر ظهور ${o.seen}` : "غير متصل"}
+            </div>
           </div>
         </div>
         <span className={`rounded-full px-3 py-1 text-xs font-bold ${o.online ? "bg-emerald-500/20 text-emerald-400" : "bg-surface-2 text-muted"}`}>
