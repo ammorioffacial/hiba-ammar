@@ -14,12 +14,14 @@ export function PresenceBoard() {
   const me = useOnline((s) => s.me);
   const [data, setData] = useState<Record<string, Presence>>({});
   const [, tick] = useState(0);
+  const [offset, setOffset] = useState(0); // فرق الساعة بين جوالكم وساعة Firebase
 
   useEffect(() => {
     if (!firebaseReady || !db) return;
     const t = setInterval(() => tick((n) => n + 1), 30_000);
-    const off = onValue(ref(db, "presence"), (snap) => setData(snap.val() ?? {}));
-    return () => { clearInterval(t); off(); };
+    const offPresence = onValue(ref(db, "presence"), (snap) => setData(snap.val() ?? {}));
+    const offTime = onValue(ref(db, ".info/serverTimeOffset"), (snap) => setOffset(Number(snap.val()) || 0));
+    return () => { clearInterval(t); offPresence(); offTime(); };
   }, []);
 
   if (!firebaseReady || !me) return null;
@@ -28,7 +30,7 @@ export function PresenceBoard() {
   const status = (n: string) => {
     const p = data[n];
     // متصل فقط إذا الإشارة حديثة (آخر دقيقتين)
-    const fresh = !!p?.at && Date.now() - p.at < 120_000;
+    const fresh = !!p?.at && Date.now() + offset - p.at < 120_000;
     const online = !!p?.online && fresh;
     return { online, game: online ? p?.game ?? null : null };
   };

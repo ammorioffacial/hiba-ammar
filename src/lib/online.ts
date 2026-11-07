@@ -43,7 +43,7 @@ function attachPresence(name: string) {
   });
   // إشارة تتحدث كل دقيقة، فأي حالة قديمة تصير "غير متصل" تلقائياً
   heartbeat = setInterval(() => {
-    if (useOnline.getState().me) update(p, { at: Date.now() });
+    if (useOnline.getState().me) update(p, { at: serverTimestamp() });
   }, 60_000);
 }
 
