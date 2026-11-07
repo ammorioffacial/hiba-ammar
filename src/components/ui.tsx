@@ -50,3 +50,5 @@ export const shuffle = <T,>(arr: readonly T[]): T[] => {
 };
 
 export const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+export const newId = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36);

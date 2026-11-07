@@ -72,9 +72,14 @@ export default function HomePage() {
       {/* ===== من يلعب الحين ===== */}
       <div className="mb-4">
         <PresenceBoard />
-        <Link href="/online" className="mt-2 block rounded-2xl border border-line bg-surface-2 px-4 py-3 text-center font-bold">
-          العبوا أونلاين
-        </Link>
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          <Link href="/online" className="block rounded-2xl border border-line bg-surface-2 px-4 py-3 text-center font-bold">
+            العبوا أونلاين
+          </Link>
+          <Link href="/together" className="block rounded-2xl border border-line bg-surface-2 px-4 py-3 text-center font-bold">
+            سوا
+          </Link>
+        </div>
       </div>
 
       {/* ===== تحدي اليوم ===== */}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { ref, get, set } from "firebase/database";
@@ -18,6 +18,13 @@ export default function LoginPage() {
   const [who, setWho] = useState<string>(names.a);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  // Firebase يشتغل بس في المتصفح، فننتظر التحميل عشان ما يصير اختلاف بين السيرفر والمتصفح
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) {
+    return <Shell title="تسجيل الدخول" action={<TopControls />}><div className="py-10 text-center text-muted">جاري التحميل…</div></Shell>;
+  }
 
   if (!firebaseReady || !auth || !db) {
     return (
@@ -38,8 +45,9 @@ export default function LoginPage() {
       // الاسم يتحدد أول مرة بس، بعدين يبقى ثابت
       const snap = await get(ref(db!, `users/${cred.user.uid}`));
       if (!snap.exists()) await set(ref(db!, `users/${cred.user.uid}`), { name: who });
-    } catch {
-      setErr("البريد أو كلمة السر غلط");
+    } catch (e) {
+      const code = (e as { code?: string })?.code ?? "unknown";
+      setErr(`تعذر الدخول (${code})`);
     } finally {
       setBusy(false);
     }

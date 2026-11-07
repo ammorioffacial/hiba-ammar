@@ -57,7 +57,7 @@ const DEFAULT_STATS: Stats = {
 
 const DEFAULT_COLORING: ColoringState = { drawings: {}, streak: 0, lastDay: null };
 
-const dayKey = (d: Date) => `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+export const dayKey = (d: Date) => `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
 
 interface AppState {
   names: { a: string; b: string };
@@ -69,6 +69,7 @@ interface AppState {
   counters: Record<string, number>;
   points: number;
   coloring: ColoringState;
+  days: Record<string, number>; // عدد الجولات في كل يوم (للتقويم والسلسلة)
 
   incr: (key: string, by?: number) => void;
   setTheme: (t: Theme) => void;
@@ -117,6 +118,7 @@ export const useStore = create<AppState>()(
         counters: {},
         points: 0,
         coloring: DEFAULT_COLORING,
+        days: {},
 
         incr: (key, by = 1) =>
           set((s) => ({ counters: { ...s.counters, [key]: (s.counters[key] ?? 0) + by } })),
@@ -125,7 +127,11 @@ export const useStore = create<AppState>()(
         setLast: (last) => set({ last }),
 
         recordPlay: () => {
-          set((s) => ({ stats: { ...s.stats, plays: s.stats.plays + 1 } }));
+          const today = dayKey(new Date());
+          set((s) => ({
+            stats: { ...s.stats, plays: s.stats.plays + 1 },
+            days: { ...s.days, [today]: (s.days[today] ?? 0) + 1 },
+          }));
           if (get().stats.plays >= 10) unlock("plays10");
         },
 

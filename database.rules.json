@@ -12,6 +12,24 @@
         ".write": "auth != null"
       }
     },
+    "shared": {
+      "$key": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+    "chat": {
+      "$k": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+    "typing": {
+      "$name": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
     "rooms": {
       "$code": {
         ".read": "auth != null",
