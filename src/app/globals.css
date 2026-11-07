@@ -1,26 +1,65 @@
 @import "tailwindcss";
 
+/* ===== الألوان: زهري (داكن افتراضياً) ===== */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #1d0716;
+  --bg-soft: #2e0c24;
+  --surface: rgba(255, 180, 215, 0.07);
+  --surface-2: rgba(255, 180, 215, 0.14);
+  --line: rgba(255, 170, 210, 0.18);
+  --text: #fff4f9;
+  --muted: #d8a6c0;
+  --pink: #ff5fa2;
+  --pink-2: #ff8cc0;
+  --gold: #ffd166;
+  --blush: #ffd3e6;
+  color-scheme: dark;
+}
+
+[data-theme="light"] {
+  --bg: #fff1f7;
+  --bg-soft: #ffe0ee;
+  --surface: rgba(255, 255, 255, 0.7);
+  --surface-2: rgba(255, 255, 255, 0.95);
+  --line: rgba(225, 29, 116, 0.15);
+  --text: #3d0a24;
+  --muted: #9c4a72;
+  --pink: #e11d74;
+  --pink-2: #ff5fa2;
+  --gold: #d97706;
+  --blush: #c2185b;
+  color-scheme: light;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg: var(--bg);
+  --color-bg-soft: var(--bg-soft);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-pink: var(--pink);
+  --color-pink-2: var(--pink-2);
+  --color-gold: var(--gold);
+  --color-blush: var(--blush);
+  --font-sans: var(--font-cairo), system-ui, sans-serif;
+  --font-script: var(--font-ruqaa), serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  background: var(--bg);
+  color: var(--text);
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background:
+    radial-gradient(900px 500px at 95% -10%, rgba(255, 63, 139, 0.28), transparent 60%),
+    radial-gradient(700px 500px at -10% 20%, rgba(255, 140, 192, 0.18), transparent 60%),
+    var(--bg);
+  background-attachment: fixed;
+  min-height: 100dvh;
+  user-select: none;
 }

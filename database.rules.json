@@ -1,0 +1,22 @@
+{
+  "rules": {
+    "users": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+    "presence": {
+      "$name": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+    "rooms": {
+      "$code": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    }
+  }
+}
