@@ -33,6 +33,7 @@ export function PresenceBoard() {
 
   return (
     <div className="space-y-2">
+      <div className="break-all text-[10px] text-muted" dir="ltr">debug: other={other} data={JSON.stringify(data)} me={me.name}</div>
       <div className={`flex items-center justify-between rounded-2xl border p-4 ${o.online ? "border-emerald-400/60 bg-emerald-500/10" : "border-line bg-surface"}`}>
         <div className="flex items-center gap-3">
           <span className={`h-3 w-3 rounded-full ${o.online ? "bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,.8)]" : "bg-muted"}`} />
