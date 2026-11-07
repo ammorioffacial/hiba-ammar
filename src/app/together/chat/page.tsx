@@ -77,8 +77,11 @@ export default function ChatPage() {
   useEffect(() => {
     if (!firebaseReady || !db || !me) return;
     const t = setInterval(() => setNow(Date.now()), 1000);
-    const off = onValue(ref(db, "typing"), (snap) => setTyping((snap.val() ?? {}) as Record<string, number>));
-    return () => { clearInterval(t); off(); };
+    // القواعد تسمح بقراءة كل اسم لحاله، فنقرأ الاسمين بشكل منفصل
+    const offs = [names.a, names.b].map((n) =>
+      onValue(ref(db!, `typing/${n}`), (snap) => setTyping((d) => ({ ...d, [n]: snap.val() ?? 0 })))
+    );
+    return () => { clearInterval(t); offs.forEach((off) => off()); };
   }, [me?.uid]);
 
   useEffect(() => {
