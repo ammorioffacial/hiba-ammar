@@ -36,8 +36,9 @@ function Lobby() {
       const c = await createRoom(me.uid, me.name);
       sfx.win();
       router.push(`/play/${c}`);
-    } catch {
-      setErr("تعذر إنشاء الغرفة، جربوا مرة ثانية");
+    } catch (e) {
+      const code = (e as { code?: string; message?: string })?.code ?? (e as Error)?.message ?? "unknown";
+      setErr(`تعذر إنشاء الغرفة (${code})`);
       setBusy(false);
     }
   };
