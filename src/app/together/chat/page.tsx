@@ -10,7 +10,7 @@ import { useOnline } from "@/lib/online";
 import { useStore } from "@/lib/store";
 import { sfx, buzz } from "@/lib/sound";
 import { PIN_COLORS } from "@/lib/together-data";
-import { ref, push, onValue, query, limitToLast, update, set } from "firebase/database";
+import { ref, push, onValue, query, limitToLast, update, set, serverTimestamp, onDisconnect } from "firebase/database";
 import {
   Send, Pin, PinOff, Heart, Smile, AlertCircle, Brain, ThumbsUp, Frown, Hand, Moon, Sun,
   Sparkles, Music, Cake, Gamepad2, PartyPopper, Plus, StickyNote, Check, X, type LucideIcon,
@@ -51,9 +51,12 @@ export default function ChatPage() {
   const [text, setText] = useState("");
   const [showStickers, setShowStickers] = useState(false);
   const [reactFor, setReactFor] = useState<string | null>(null);
-  const [typing, setTyping] = useState<Record<string, number>>({});
+  const [typing, setTyping] = useState<Record<string, { on?: boolean; at?: number }>>({});
+  const [reads, setReads] = useState<Record<string, number>>({});
+  const [offset, setOffset] = useState(0); // فرق الساعة بيننا وبين السيرفر
   const [now, setNow] = useState(0);
   const lastTyping = useRef(0);
+  const idle = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bottom = useRef<HTMLDivElement>(null);
   const myName = me?.name ?? names.a;
   const otherName = myName === names.a ? names.b : names.a;
@@ -79,9 +82,11 @@ export default function ChatPage() {
     const t = setInterval(() => setNow(Date.now()), 1000);
     // القواعد تسمح بقراءة كل اسم لحاله، فنقرأ الاسمين بشكل منفصل
     const offs = [names.a, names.b].map((n) =>
-      onValue(ref(db!, `typing/${n}`), (snap) => setTyping((d) => ({ ...d, [n]: snap.val() ?? 0 })))
+      onValue(ref(db!, `typing/${n}`), (snap) => setTyping((d) => ({ ...d, [n]: snap.val() ?? {} })))
     );
-    return () => { clearInterval(t); offs.forEach((off) => off()); };
+    const offTime = onValue(ref(db!, ".info/serverTimeOffset"), (snap) => setOffset(Number(snap.val()) || 0));
+    const offReads = onValue(ref(db!, "chat/reads"), (snap) => setReads((snap.val() ?? {}) as Record<string, number>));
+    return () => { clearInterval(t); offs.forEach((off) => off()); offTime(); offReads(); };
   }, [me?.uid]);
 
   useEffect(() => {
@@ -98,7 +103,7 @@ export default function ChatPage() {
   }
 
   const send = (payload: Omit<Msg, "id" | "from" | "at">) => {
-    push(ref(db!, "chat/messages"), { from: myName, at: Date.now(), ...payload });
+    push(ref(db!, "chat/messages"), { from: myName, at: serverTimestamp(), ...payload });
     sfx.click();
   };
 
@@ -107,17 +112,43 @@ export default function ChatPage() {
     if (!t) return;
     send({ text: t });
     setText("");
-    set(ref(db!, `typing/${myName}`), 0);
+    stopTyping();
+  };
+
+  const typingRef = () => ref(db!, `typing/${myName}`);
+
+  // إشارة "يكتب" تتجدد كل ثانيتين وتنطفي تلقائياً لو انقطع الاتصال
+  const startTyping = () => {
+    const t = Date.now();
+    if (t - lastTyping.current < 2000) return;
+    lastTyping.current = t;
+    onDisconnect(typingRef()).set({ on: false, at: serverTimestamp() });
+    set(typingRef(), { on: true, at: serverTimestamp() });
+  };
+
+  const stopTyping = () => {
+    lastTyping.current = 0;
+    if (idle.current) clearTimeout(idle.current);
+    set(typingRef(), { on: false, at: serverTimestamp() });
   };
 
   const onTyping = (v: string) => {
     setText(v);
-    const t = Date.now();
-    if (t - lastTyping.current > 2000) {
-      lastTyping.current = t;
-      set(ref(db!, `typing/${myName}`), t);
-    }
+    if (!v.trim()) return stopTyping();
+    startTyping();
+    if (idle.current) clearTimeout(idle.current);
+    idle.current = setTimeout(stopTyping, 4000);
   };
+
+  // نعلّم الرسائل كمقروءة لما نفتح الدردشة
+  useEffect(() => {
+    if (!db || !me || tab !== "chat") return;
+    const last = msgs[msgs.length - 1];
+    if (!last || last.from === myName) return;
+    if ((reads[myName] ?? 0) >= last.at) return;
+    set(ref(db, `chat/reads/${myName}`), serverTimestamp());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [msgs.length, tab, me?.uid]);
 
   const react = (m: Msg, r: string) => {
     const cur = m.reactions?.[myName];
@@ -126,7 +157,10 @@ export default function ChatPage() {
     sfx.pick();
   };
 
-  const otherTyping = typing[otherName] && now - typing[otherName] < 4000;
+  const oTyp = typing[otherName];
+  const otherTyping = !!oTyp?.on && !!oTyp.at && Date.now() + offset - oTyp.at < 8000;
+  const lastMine = [...msgs].reverse().find((m) => m.from === myName);
+  const seen = !!lastMine && (reads[otherName] ?? 0) >= lastMine.at;
   const pinned = Object.values(notes).filter((n) => n.pinned);
 
   const addNote = (color: string) => {
@@ -172,6 +206,9 @@ export default function ChatPage() {
                       ) : m.text}
                       <div className={`mt-1 text-[10px] ${mine ? "text-white/70" : "text-muted"}`}>{new Date(m.at).toLocaleTimeString("ar", { hour: "2-digit", minute: "2-digit" })}</div>
                     </motion.button>
+                    {lastMine?.id === m.id && (
+                      <div className="mt-0.5 text-left text-[10px] font-bold text-pink-400">{seen ? "تمت المشاهدة" : "تم الإرسال"}</div>
+                    )}
                     {reactions.length > 0 && (
                       <div className="absolute -bottom-2 right-2 flex gap-0.5 rounded-full bg-surface-2 px-1.5 py-0.5 text-xs">
                         {reactions.map((r, i) => { const R = REACTS.find((x) => x.id === r)?.Icon ?? Heart; return <R key={i} className="h-3 w-3 text-pink-400" />; })}
@@ -189,6 +226,15 @@ export default function ChatPage() {
                 </div>
               );
             })}
+            {otherTyping && (
+              <div className="flex justify-end">
+                <div className="flex gap-1 rounded-2xl bg-surface-2 px-3.5 py-3">
+                  {[0, 1, 2].map((i) => (
+                    <motion.span key={i} className="h-1.5 w-1.5 rounded-full bg-pink-400" animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1, delay: i * 0.2 }} />
+                  ))}
+                </div>
+              </div>
+            )}
             <div ref={bottom} />
           </div>
 
