@@ -6,6 +6,7 @@ import { Trophy } from "lucide-react";
 import confetti from "canvas-confetti";
 import { ACHIEVEMENTS, useStore, type AchievementId } from "@/lib/store";
 import { OnlineBoot } from "@/components/OnlineBoot";
+import { AuthGate } from "@/components/AuthGate";
 
 export function celebrate(count = 120) {
   confetti({
@@ -41,7 +42,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <>
       <OnlineBoot />
-      {children}
+      <AuthGate>{children}</AuthGate>
       <AnimatePresence>
         {badge && (
           <motion.div

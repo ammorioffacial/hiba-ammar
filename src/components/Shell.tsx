@@ -4,6 +4,11 @@ import Link from "next/link";
 import { ArrowRight, Moon, Sun, Volume2, VolumeX } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { sfx } from "@/lib/sound";
+import { useOnline } from "@/lib/online";
+import { auth, db, firebaseReady } from "@/lib/firebase";
+import { ref, update } from "firebase/database";
+import { signOut } from "firebase/auth";
+import { LogOut } from "lucide-react";
 
 // الهيدر المشترك: زر رجوع + عنوان + أزرار الوضع والصوت
 export function Shell({
@@ -40,6 +45,7 @@ export function TopControls() {
   const sound = useStore((s) => s.sound);
   const toggleSound = useStore((s) => s.toggleSound);
   const ThemeIcon = theme === "dark" ? Sun : Moon;
+  const me = useOnline((s) => s.me);
 
   return (
     <div className="flex items-center gap-2">
@@ -50,6 +56,11 @@ export function TopControls() {
       >
         {sound ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
       </button>
+      {firebaseReady && me && (
+        <button aria-label="تسجيل خروج" title="تسجيل خروج" onClick={async () => { const n = useOnline.getState().me?.name; if (db && n) await update(ref(db, `presence/${n}`), { online: false, game: null, at: Date.now() }); signOut(auth!); }} className="grid h-10 w-10 place-items-center rounded-full border border-line bg-surface-2">
+          <LogOut className="h-5 w-5" />
+        </button>
+      )}
       <button
         aria-label="تغيير الوضع"
         onClick={() => {
